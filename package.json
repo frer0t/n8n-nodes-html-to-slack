@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-html-to-slack",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "n8n community node — converts HTML to Slack mrkdwn",
 	"keywords": [
 		"n8n-community-node-package",
@@ -73,7 +73,9 @@
 		"turndown": "^7.2.0"
 	},
 	"pnpm": {
-		"neverBuiltDependencies": ["isolated-vm"]
+		"neverBuiltDependencies": [
+			"isolated-vm"
+		]
 	},
 	"devDependencies": {
 		"@n8n/node-cli": "*",
