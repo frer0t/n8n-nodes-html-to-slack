@@ -196,6 +196,13 @@ const configureTurndown = (opts: Required<ConversionOptions>): TurndownService =
 		replacement: (content) => content,
 	});
 
+	// Strip non-content elements — style/script/noscript content must never appear in output.
+	// Added last so it has the highest priority and acts as a safety net after regex pre-stripping.
+	td.addRule('stripNonContent', {
+		filter: ['style', 'script', 'noscript', 'title', 'head'],
+		replacement: () => '',
+	});
+
 	// Strip hidden elements (email preheaders, tracking pixels, spacer divs).
 	// Must be added last so it takes precedence over stripContainers for hidden <div>s.
 	td.addRule('removeHidden', {
@@ -228,7 +235,17 @@ export const htmlToMrkdwn = (html: string, options: ConversionOptions = {}): str
 	};
 
 	const td = configureTurndown(opts);
-	const md = td.turndown(html);
+
+	// Pre-strip non-content blocks via regex before the DOM parser sees them.
+	// domino (turndown's server-side parser) can misparse complex email HTML
+	// (MJML, MSO conditionals) and leak <style>/<script>/<noscript> text into output.
+	const cleanHtml = html
+		.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+		.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+		.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
+		.replace(/<!--\[if[^\]]*\]>[\s\S]*?<!\[endif\]-->/gi, '');
+
+	const md = td.turndown(cleanHtml);
 	let mrkdwn = slackifyMarkdown(md);
 
 	// Strip zero-width and invisible Unicode chars (slackify delimiters + email preheader padding).
