@@ -73,7 +73,7 @@
 		"turndown": "^7.2.0"
 	},
 	"pnpm": {
-		"ignoredBuiltDependencies": ["isolated-vm"]
+		"neverBuiltDependencies": ["isolated-vm"]
 	},
 	"devDependencies": {
 		"@n8n/node-cli": "*",
