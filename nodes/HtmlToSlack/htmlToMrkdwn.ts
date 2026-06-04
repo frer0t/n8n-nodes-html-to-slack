@@ -14,8 +14,8 @@ export interface ConversionOptions {
 
 const SEPARATOR = '───────────────';
 
-// Matches bare http/https/mailto URLs not already inside < > context
-const BARE_URL_RE = /(?<![<|])(https?:\/\/[^\s<>")\]]+|mailto:[^\s<>")\]]+)/g;
+// Matches bare http/https/mailto URLs not already inside < > or a backtick code span
+const BARE_URL_RE = /(?<![<|`])(https?:\/\/[^\s<>")\]`]+|mailto:[^\s<>")\]`]+)/g;
 
 // Split text on code spans/blocks and apply transform only to non-code parts
 const applyOutsideCode = (text: string, fn: (s: string) => string): string => {
@@ -25,14 +25,21 @@ const applyOutsideCode = (text: string, fn: (s: string) => string): string => {
 		.join('');
 };
 
-// Wrap bare URLs — skip content inside code spans/blocks
+// Safety net: wrap bare URLs that slipped past slackify as `url` inline code
 const wrapBareUrls = (text: string): string =>
-	applyOutsideCode(text, (s) => s.replace(BARE_URL_RE, '<$1>'));
+	applyOutsideCode(text, (s) => s.replace(BARE_URL_RE, '`$1`'));
 
 // <url|url> → <url>  (slackify autolinks produce these for self-ref URLs)
 const deduplicateSelfRefLinks = (text: string): string =>
 	text.replace(/<([^|>\s]+)\|([^>\s]+)>/g, (match, url, linkText) =>
 		url === linkText ? `<${url}>` : match,
+	);
+
+// Bare Slack links <url> (no display text) → `url` inline code.
+// Named links <url|text> are left as-is so they stay clickable in Slack.
+const wrapBareSlackLinks = (text: string): string =>
+	applyOutsideCode(text, (s) =>
+		s.replace(/<(https?:\/\/[^\s|>`]+|mailto:[^\s|>`]+)>/g, '`$1`'),
 	);
 
 // turndown re-encodes bare & to &amp; — decode it outside code regions
@@ -56,15 +63,15 @@ const configureTurndown = (opts: Required<ConversionOptions>): TurndownService =
 		replacement: (content) => `~~${content}~~`,
 	});
 
-	// Links → standard markdown [text](url); slackify converts to <url|text>
+	// Links → `url` inline code (monospace, non-clickable)
 	td.addRule('link', {
 		filter: 'a',
 		replacement: (content, node) => {
 			const el = node as unknown as HTMLAnchorElement;
 			const href = el.getAttribute('href') ?? '';
 			const text = content.trim();
-			if (!href || !text) return text;
-			return `[${text}](${href})`;
+			if (!href) return text;
+			return `\`${href}\``;
 		},
 	});
 
@@ -126,12 +133,35 @@ const configureTurndown = (opts: Required<ConversionOptions>): TurndownService =
 		filter: 'table',
 		replacement: (_content, node) => {
 			if (opts.tableHandling === 'strip') return '';
-			const rows = Array.from((node as Element).querySelectorAll('tr'));
+			const el = node as Element;
+			// Layout table (contains nested tables) — let inner content bubble up naturally.
+			// Re-reading textContent here would duplicate content already processed by inner tables.
+			if (el.querySelector('table')) return _content;
+			// Leaf data table — flatten rows to tab-separated text
+			const rows = Array.from(el.querySelectorAll('tr'));
 			const lines = rows.map((row) => {
 				const cells = Array.from(row.querySelectorAll('th, td'));
-				return cells.map((c) => c.textContent?.trim() ?? '').join('\t');
+				return cells
+					.map((c) => {
+						// textContent concatenates adjacent block children (e.g. <p> elements) without
+						// any separator, causing "f@example.comLogin Time:" runons. Split on direct
+						// block children when there are multiple, and join with newlines.
+						const blockChildren = Array.from(c.childNodes).filter((n) =>
+							['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(
+								(n as Element).nodeName,
+							),
+						);
+						if (blockChildren.length > 1) {
+							return blockChildren
+								.map((ch) => (ch as Element).textContent?.trim() ?? '')
+								.filter(Boolean)
+								.join('\n');
+						}
+						return c.textContent?.trim() ?? '';
+					})
+					.join('\t');
 			});
-			return lines.join('\n') + '\n\n';
+			return lines.filter((l) => l.trim()).join('\n') + '\n\n';
 		},
 	});
 
@@ -149,7 +179,7 @@ const configureTurndown = (opts: Required<ConversionOptions>): TurndownService =
 			const alt = el.getAttribute('alt') ?? '';
 			const src = el.getAttribute('src') ?? '';
 			if (opts.imageHandling === 'strip') return '';
-			if (opts.imageHandling === 'asLink') return src ? `[${src}](${src})` : '';
+			if (opts.imageHandling === 'asLink') return src ? `[${alt || 'image'}](${src})` : '';
 			return alt;
 		},
 	});
@@ -164,6 +194,20 @@ const configureTurndown = (opts: Required<ConversionOptions>): TurndownService =
 	td.addRule('stripContainers', {
 		filter: ['div', 'span', 'section', 'article', 'header', 'footer', 'main', 'aside', 'nav'],
 		replacement: (content) => content,
+	});
+
+	// Strip hidden elements (email preheaders, tracking pixels, spacer divs).
+	// Must be added last so it takes precedence over stripContainers for hidden <div>s.
+	td.addRule('removeHidden', {
+		filter: (node) => {
+			const style = (node as HTMLElement).getAttribute('style') ?? '';
+			return (
+				(node as HTMLElement).getAttribute('data-skip-in-text') === 'true' ||
+				/display\s*:\s*none/.test(style) ||
+				/opacity\s*:\s*0\b/.test(style)
+			);
+		},
+		replacement: () => '',
 	});
 
 	return td;
@@ -187,11 +231,14 @@ export const htmlToMrkdwn = (html: string, options: ConversionOptions = {}): str
 	const md = td.turndown(html);
 	let mrkdwn = slackifyMarkdown(md);
 
-	// slackify adds U+200B zero-width spaces as format delimiters — strip them
-	mrkdwn = mrkdwn.replace(/[\u200B\uFEFF]/g, '');
+	// Strip zero-width and invisible Unicode chars (slackify delimiters + email preheader padding).
+	mrkdwn = mrkdwn.replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '');
 
 	// slackify GFM autolinks produce <url|url> for bare URLs — deduplicate
 	mrkdwn = deduplicateSelfRefLinks(mrkdwn);
+
+	// Bare Slack links <url> → `<url>` inline code; named links <url|text> stay clickable
+	mrkdwn = wrapBareSlackLinks(mrkdwn);
 
 	// remark-stringify pads ordered list markers: "1.  item" — normalize to single space
 	mrkdwn = mrkdwn.replace(/^(\d+)\.\s{2,}/gm, '$1. ');

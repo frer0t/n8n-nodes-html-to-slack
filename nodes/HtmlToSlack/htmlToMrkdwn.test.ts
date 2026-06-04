@@ -43,34 +43,32 @@ describe('inline formatting', () => {
 // ─── Links ────────────────────────────────────────────────────────────────────
 
 describe('links', () => {
-	it('converts named link to <url|text>', () => {
-		expect(htmlToMrkdwn('<a href="https://x.com">Visit</a>')).toBe('<https://x.com|Visit>');
+	it('converts named link to `url`', () => {
+		expect(htmlToMrkdwn('<a href="https://x.com">Visit</a>')).toBe('`https://x.com`');
 	});
 
-	it('converts self-referencing link (text === href) to <url>', () => {
-		expect(htmlToMrkdwn('<a href="https://x.com">https://x.com</a>')).toBe('<https://x.com>');
+	it('converts self-referencing link (text === href) to `url`', () => {
+		expect(htmlToMrkdwn('<a href="https://x.com">https://x.com</a>')).toBe('`https://x.com`');
 	});
 
-	it('converts mailto link to <mailto:x|text>', () => {
-		expect(htmlToMrkdwn('<a href="mailto:a@b.com">Email me</a>')).toBe(
-			'<mailto:a@b.com|Email me>',
-		);
+	it('converts mailto link to `mailto:url`', () => {
+		expect(htmlToMrkdwn('<a href="mailto:a@b.com">Email me</a>')).toBe('`mailto:a@b.com`');
 	});
 
 	it('wraps bare https URL in text', () => {
-		expect(htmlToMrkdwn('visit https://x.com today')).toBe('visit <https://x.com> today');
+		expect(htmlToMrkdwn('visit https://x.com today')).toBe('visit `https://x.com` today');
 	});
 
 	it('wraps two bare URLs independently', () => {
 		const result = htmlToMrkdwn('see https://a.com and https://b.com');
-		expect(result).toContain('<https://a.com>');
-		expect(result).toContain('<https://b.com>');
+		expect(result).toContain('`https://a.com`');
+		expect(result).toContain('`https://b.com`');
 	});
 
 	it('does not double-wrap already-wrapped URL', () => {
 		const result = htmlToMrkdwn('<a href="https://x.com">https://x.com</a>');
-		expect(result).toBe('<https://x.com>');
-		expect(result).not.toContain('<<');
+		expect(result).toBe('`https://x.com`');
+		expect(result).not.toContain('``');
 	});
 
 	it('does not wrap URL inside <code>', () => {
@@ -188,9 +186,9 @@ describe('images', () => {
 		expect(htmlToMrkdwn(imgHtml, { imageHandling: 'altText' })).toBe('logo');
 	});
 
-	it('returns <src> link when imageHandling=asLink', () => {
+	it('returns <src|alt> clickable link when imageHandling=asLink', () => {
 		const result = htmlToMrkdwn(imgHtml, { imageHandling: 'asLink' });
-		expect(result).toBe('<https://example.com/logo.png>');
+		expect(result).toBe('<https://example.com/logo.png|logo>');
 	});
 
 	it('strips image when imageHandling=strip', () => {
@@ -269,6 +267,6 @@ describe('edge cases', () => {
 
 	it('wraps bare URL in plain text input', () => {
 		const result = htmlToMrkdwn('see https://example.com for details');
-		expect(result).toContain('<https://example.com>');
+		expect(result).toContain('`https://example.com`');
 	});
 });
