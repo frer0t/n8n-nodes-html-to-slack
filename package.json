@@ -30,7 +30,26 @@
 		"format": "prettier nodes --write",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"prepublishOnly": "pnpm run build && pnpm run lint"
+		"prepublishOnly": "pnpm run build && pnpm run lint",
+		"release": "release-it"
+	},
+	"release-it": {
+		"git": {
+			"commitMessage": "chore: release v${version}",
+			"tagName": "${version}"
+		},
+		"github": {
+			"release": false
+		},
+		"npm": {
+			"publish": false
+		},
+		"plugins": {
+			"@release-it/conventional-changelog": {
+				"preset": "conventionalcommits",
+				"infile": "CHANGELOG.md"
+			}
+		}
 	},
 	"author": {
 		"name": "frerot",
@@ -55,9 +74,11 @@
 	},
 	"devDependencies": {
 		"@n8n/node-cli": "*",
+		"@release-it/conventional-changelog": "^11.0.1",
 		"@types/turndown": "^5.0.0",
 		"eslint": "9.39.4",
 		"prettier": "3.8.3",
+		"release-it": "^20.2.0",
 		"typescript": "5.9.3",
 		"vitest": "^2.0.0"
 	}
