@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1](https://github.com/frer0t/n8n-nodes-html-to-slack/compare/0.2.0...0.2.1) (2026-06-04)
+
+### Bug Fixes
+
+* improve email HTML conversion robustness ([4a1014a](https://github.com/frer0t/n8n-nodes-html-to-slack/commit/4a1014a648ec4718f20408bc9f598e3f8016e1bf))
+
 ## [0.2.0](https://github.com/frer0t/n8n-nodes-html-to-slack/compare/0.1.0...0.2.0) (2026-06-04)
 
 ### Features
