@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.2](https://github.com/frer0t/n8n-nodes-html-to-slack/compare/0.2.1...0.2.2) (2026-06-04)
+
+### Bug Fixes
+
+* strip CSS/script leaking from complex email HTML ([51f4a3d](https://github.com/frer0t/n8n-nodes-html-to-slack/commit/51f4a3d4a36c1dc3c68b44fb8be932f9e2d07624))
+
 ## [0.2.1](https://github.com/frer0t/n8n-nodes-html-to-slack/compare/0.2.0...0.2.1) (2026-06-04)
 
 ### Bug Fixes
