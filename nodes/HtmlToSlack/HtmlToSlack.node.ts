@@ -1,4 +1,5 @@
 import type {
+	IDataObject,
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
@@ -23,43 +24,12 @@ export class HtmlToSlack implements INodeType {
 		outputs: [NodeConnectionTypes.Main],
 		properties: [
 			{
-				displayName: 'HTML Source',
-				name: 'htmlSource',
-				type: 'options',
-				options: [
-					{
-						name: 'Fixed Value',
-						value: 'expression',
-						description: 'Type HTML directly or use an expression like ={{ $JSON.body }}',
-					},
-					{
-						name: 'From Input Field',
-						value: 'field',
-						description: 'Read HTML from a named field in the input item (Gmail, HTTP Request, etc.)',
-					},
-				],
-				default: 'field',
-				noDataExpression: true,
-			},
-			{
-				displayName: 'HTML Field Name',
-				name: 'htmlFieldName',
-				type: 'string',
-				default: 'html',
-				required: true,
-				displayOptions: { show: { htmlSource: ['field'] } },
-				hint: 'Name of the field from the previous node that contains HTML. Gmail uses "body", HTTP Request uses "data".',
-				description: 'Field in the input item that contains the HTML to convert',
-			},
-			{
 				displayName: 'HTML',
 				name: 'html',
 				type: 'string',
 				typeOptions: { rows: 5 },
 				default: '',
-				required: true,
-				displayOptions: { show: { htmlSource: ['expression'] } },
-				description: 'HTML string to convert. Supports expressions like ={{ $JSON.body }}.',
+				description: 'HTML to convert. Type plain HTML, reference the attached node with ={{ $JSON.body }}, or reference any earlier node with ={{ $(\'NodeName\').item.JSON.body }}.',
 			},
 			{
 				displayName: 'Output Field Name',
@@ -123,22 +93,19 @@ export class HtmlToSlack implements INodeType {
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-		const items = this.getInputData();
+		const incoming = this.getInputData();
+
+		// If the directly attached node produced no items, run once with empty JSON
+		// so expressions referencing earlier nodes (e.g. {{ $('If').item.json.html }})
+		// are still evaluated.
+		const items: INodeExecutionData[] =
+			incoming.length > 0 ? incoming : [{ json: {} as IDataObject, pairedItem: { item: 0 } }];
+
 		const returnData: INodeExecutionData[] = [];
 
 		for (let i = 0; i < items.length; i++) {
 			try {
-				const htmlSource = this.getNodeParameter('htmlSource', i, 'field') as string;
-				let html: string;
-
-				if (htmlSource === 'field') {
-					const fieldName = this.getNodeParameter('htmlFieldName', i, 'html') as string;
-					const value = items[i].json[fieldName];
-					html = typeof value === 'string' ? value : String(value ?? '');
-				} else {
-					html = this.getNodeParameter('html', i, '') as string;
-				}
-
+				const html = this.getNodeParameter('html', i, '') as string;
 				const outputField = this.getNodeParameter('outputField', i, 'text') as string;
 				const options = this.getNodeParameter('options', i, {}) as ConversionOptions;
 
