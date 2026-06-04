@@ -72,6 +72,9 @@
 		"slackify-markdown": "^4.3.1",
 		"turndown": "^7.2.0"
 	},
+	"pnpm": {
+		"ignoredBuiltDependencies": ["isolated-vm"]
+	},
 	"devDependencies": {
 		"@n8n/node-cli": "*",
 		"@release-it/conventional-changelog": "^11.0.1",
