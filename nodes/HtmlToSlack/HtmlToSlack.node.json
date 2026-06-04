@@ -1,0 +1,15 @@
+{
+	"node": "n8n-nodes-html-to-slack.htmlToSlack",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Utility"],
+	"subcategories": {
+		"Utility": ["Text Processing"]
+	},
+	"alias": ["html", "slack", "mrkdwn", "markdown", "format", "convert", "message"],
+	"resources": {
+		"primaryDocumentation": [
+			{ "url": "https://api.slack.com/reference/surfaces/formatting" }
+		]
+	}
+}

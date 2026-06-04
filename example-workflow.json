@@ -1,0 +1,20 @@
+{
+  "name": "HTML to Slack Example",
+  "nodes": [
+    {
+      "parameters": {
+        "html": "<p>Check out <a href=\"https://slack.com\"><strong>Slack</strong></a> and visit https://n8n.io</p>",
+        "outputField": "text",
+        "options": {}
+      },
+      "name": "HTML to Slack",
+      "type": "n8n-nodes-html-to-slack.htmlToSlack",
+      "typeVersion": 1,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {},
+  "active": false,
+  "settings": {},
+  "id": "html-to-slack-example"
+}

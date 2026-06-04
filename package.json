@@ -1,52 +1,64 @@
 {
-	"name": "n8n-nodes-<...>",
+	"name": "n8n-nodes-html-to-slack",
 	"version": "0.1.0",
-	"description": "",
-	"license": "MIT",
-	"homepage": "",
+	"description": "n8n community node — converts HTML to Slack mrkdwn",
 	"keywords": [
-		"n8n-community-node-package"
+		"n8n-community-node-package",
+		"n8n-nodes",
+		"slack",
+		"html",
+		"mrkdwn"
 	],
-	"author": {
-		"name": "",
-		"email": ""
+	"license": "MIT",
+	"packageManager": "pnpm@9.15.0",
+	"engines": {
+		"node": ">=20.0.0",
+		"pnpm": ">=9.0.0"
 	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/<...>/n8n-nodes-<...>.git"
-	},
+	"main": "dist/index.js",
+	"files": [
+		"dist/",
+		"README.md",
+		"example-workflow.json",
+		"LICENSE.md"
+	],
 	"scripts": {
 		"build": "n8n-node build",
-		"build:watch": "tsc --watch",
 		"dev": "n8n-node dev",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
-		"release": "n8n-node release",
-		"prepublishOnly": "n8n-node prerelease"
+		"format": "prettier nodes --write",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"prepublishOnly": "pnpm run build && pnpm run lint"
 	},
-	"files": [
-		"dist"
-	],
+	"author": {
+		"name": "frerot",
+		"email": "mail@frerot.dev"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/frer0t/n8n-nodes-html-to-slack.git"
+	},
 	"n8n": {
 		"n8nNodesApiVersion": 1,
-		"strict": true,
-		"credentials": [
-			"dist/credentials/GithubIssuesApi.credentials.js",
-			"dist/credentials/GithubIssuesOAuth2Api.credentials.js"
-		],
 		"nodes": [
-			"dist/nodes/GithubIssues/GithubIssues.node.js",
-			"dist/nodes/Example/Example.node.js"
+			"dist/nodes/HtmlToSlack/HtmlToSlack.node.js"
 		]
-	},
-	"devDependencies": {
-		"@n8n/node-cli": "*",
-		"eslint": "9.39.4",
-		"prettier": "3.8.3",
-		"release-it": "20.2.0",
-		"typescript": "5.9.3"
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"
+	},
+	"dependencies": {
+		"slackify-markdown": "^4.3.1",
+		"turndown": "^7.2.0"
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "*",
+		"@types/turndown": "^5.0.0",
+		"eslint": "9.39.4",
+		"prettier": "3.8.3",
+		"typescript": "5.9.3",
+		"vitest": "^2.0.0"
 	}
 }

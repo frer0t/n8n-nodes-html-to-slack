@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+  <rect width="60" height="60" rx="8" fill="#4A154B"/>
+  <text x="50%" y="38" font-family="monospace" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">HTML</text>
+  <text x="50%" y="52" font-family="monospace" font-size="9" fill="#ECB22E" text-anchor="middle">→mrkdwn</text>
+</svg>
